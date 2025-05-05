@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace local\ps_moduleshop;
+namespace local\ps_moduleshop\classes;
 defined('MOODLE_INTERNAL') || die();
 
 
@@ -82,7 +82,7 @@ class ps_moduleshop {
      * @return stdClass
      *
      */
-    private function get_customfields(int $courseid) {
+    public function get_customfields(int $courseid) {
         $handler = handler::get_handler('core_course', 'course');
         $datas = $handler->get_instance_data($courseid, true);
         $fields = new stdClass();
@@ -118,7 +118,7 @@ class ps_moduleshop {
      * @return array
      *
      */
-    private function get_events(int $courseid): array {
+    public function get_events(int $courseid): array {
         global $DB;
         return $DB->get_records('event', [
             'courseid' => $courseid,
@@ -135,7 +135,7 @@ class ps_moduleshop {
      * @return array
      *
      */
-    private function get_teachers(int $courseid): array {
+    public function get_teachers(int $courseid): array {
         $context = \context_course::instance($courseid);
         $users = get_enrolled_users($context, 'moodle/role:assign', 0, 'u.*', null, 0, 0, true);
         $teachers = [];
@@ -164,7 +164,7 @@ class ps_moduleshop {
      * @return string|null
      *
      */
-    private static function get_user_profile_field(int $userid, string $shortname): ?string {
+    public static function get_user_profile_field(int $userid, string $shortname): ?string {
         global $DB;
         static $fieldsbyname = [];
 
@@ -190,7 +190,7 @@ class ps_moduleshop {
      * @return string|null
      *
      */
-    private function get_cohort(int $categoryid): ?string {
+    public function get_cohort(int $categoryid): ?string {
         global $DB;
 
         if (!isset($this->coursecategories[$categoryid])) {
