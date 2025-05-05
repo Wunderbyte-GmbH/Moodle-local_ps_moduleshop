@@ -3,11 +3,17 @@
 require_once(dirname(__FILE__).'/../../config.php');
 
 class ps_moduleshop {
+    /**
+     * [Description for $coursecategories]
+     *
+     * @var [type]
+     */
+    public $coursecategories = [];
 
     public function __construct() {
         global $DB;
         // Prefetch Course Categories
-        $this->course_categories = $DB->get_records_sql('SELECT id, name, path FROM {course_categories};');
+        $this->coursecategories = $DB->get_records_sql('SELECT id, name, path FROM {course_categories};');
     }
 
     public function get_export() {
@@ -35,12 +41,12 @@ class ps_moduleshop {
         return $ret;
     }
 
-    private function get_courses() {
+    public function get_courses() {
         global $DB;
         return array_values($DB->get_records_sql('SELECT id, fullname, shortname, summary, category, startdate, enddate FROM {course};'));
     }
 
-    private function get_customfields($courseid) {
+    public function get_customfields($courseid) {
         global $DB;
         $records = $DB->get_records_sql('SELECT f.id, f.shortname, f.name, f.type, f.configdata, d.value
 FROM {customfield_field} f
@@ -63,7 +69,7 @@ WHERE d.instanceid = ?;', array($courseid));
         return $ret;
     }
 
-    private function get_events($courseid) {
+    public function get_events($courseid) {
         global $DB;
         $records = $DB->get_records_sql('SELECT id, name, description, timestart, timeduration, repeatid
 FROM {event}
@@ -78,7 +84,7 @@ ORDER BY timestart;', array($courseid));
         return $records;
     }
 
-    private function get_lehrende($courseid) {
+    public function get_lehrende($courseid) {
         global $DB;
         $context = context_course::instance($courseid);
         $allcontexts = str_replace('/', ',', substr($context->path, 1));
@@ -117,14 +123,14 @@ ORDER BY timestart;', array($courseid));
         return $ret;
     }
 
-    private function get_cohort($categoryid) {
-        if (isset($this->course_categories[$categoryid])) {
-            $path = explode('/',$this->course_categories[$categoryid]->path);
+    public function get_cohort($categoryid) {
+        if (isset($this->coursecategories[$categoryid])) {
+            $path = explode('/',$this->coursecategories[$categoryid]->path);
         } else {
             return null;
         }
         if (sizeof($path) > 2) {
-            return $this->course_categories[$path[2]]->name;
+            return $this->coursecategories[$path[2]]->name;
         } else {
             return null;
         }
