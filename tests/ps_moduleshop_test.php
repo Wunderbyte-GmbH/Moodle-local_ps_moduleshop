@@ -102,7 +102,7 @@ final class ps_moduleshop_test extends advanced_testcase {
         $course = $this->getDataGenerator()->create_course();
         $this->setAdminUser();
 
-        $events =  calendar_event::create([
+        $events = calendar_event::create([
             'name' => 'Test Event',
             'description' => 'This is a test event',
             'courseid' => $course->id,
