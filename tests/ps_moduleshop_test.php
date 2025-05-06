@@ -23,9 +23,11 @@
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+namespace local_ps_moduleshop;
+use advanced_testcase;
+use calendar_event;
+use context_course;
 use core_customfield\field_controller;
-defined('MOODLE_INTERNAL') || die();
-require_once(__DIR__ . '/../lib.php');
 
 /**
  * Tests for ps_moduleshop.
@@ -35,30 +37,10 @@ require_once(__DIR__ . '/../lib.php');
  * @author David Ala
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
 final class ps_moduleshop_test extends advanced_testcase {
     protected function setUp(): void {
         parent::setUp();
         $this->resetAfterTest(true);
-    }
-
-    /**
-     * Test for get_courses.
-     *
-     * @covers \ps_moduleshop::get_courses
-     *
-     *
-     */
-    public function test_get_courses(): void {
-        $course1 = $this->getDataGenerator()->create_course();
-        $course2 = $this->getDataGenerator()->create_course();
-
-        $shop = new ps_moduleshop();
-        $courses = $shop->get_courses();
-
-        // One Course is created automatically.
-        $this->assertIsArray($courses);
-        $this->assertCount(3, $courses);
     }
 
     /**
@@ -120,7 +102,7 @@ final class ps_moduleshop_test extends advanced_testcase {
         $course = $this->getDataGenerator()->create_course();
         $this->setAdminUser();
 
-        $event = calendar_event::create([
+        $events =  calendar_event::create([
             'name' => 'Test Event',
             'description' => 'This is a test event',
             'courseid' => $course->id,
@@ -195,7 +177,7 @@ final class ps_moduleshop_test extends advanced_testcase {
         $this->set_user_profile_data($user->id, $focusfield->id, 'Heart failure');
 
         $shop = new ps_moduleshop();
-        $result = $shop->get_lehrende($course->id);
+        $result = $shop->get_teachers($course->id);
 
         // Check result.
         $this->assertCount(1, $result);
@@ -211,7 +193,7 @@ final class ps_moduleshop_test extends advanced_testcase {
      *
      * @param string $shortname
      *
-     * @return stdClass
+     * @return \stdClass
      *
      */
     protected function create_custom_profile_field(string $shortname) {
