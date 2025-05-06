@@ -14,4 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-$string['pluginname'] = 'PS Moduleshop';
+/**
+ * Strings for local:ps_moduleshop, language de
+ *
+ * @package    local_ps_moduleshop
+ * @author     David Ala
+ * @copyright  2025 Wunderbyte GmbH
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+ $string['pluginname'] = 'Modulshop';
+ $string['token'] = 'Token';
+ $string['tokendesc'] = 'Der Token muss bei der Abfrage vom Shopsystem angegeben werden.';
