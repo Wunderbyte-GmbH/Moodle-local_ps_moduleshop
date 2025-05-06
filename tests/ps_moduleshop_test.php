@@ -1,34 +1,75 @@
 <?php
-use core_customfield\field_controller;
-use core_calendar\event;
-use local\ps_moduleshop\classes\ps_moduleshop;
-
-
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Tests for booking rules.
+ * Tests for ps_moduleshop.
  *
- * @package ps_moduleshop
- * @category test
+ * @package local_ps_moduleshop
  * @copyright 2025 Wunderbyte GmbH <info@wunderbyte.at>
+ * @author David Ala
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
+use core_customfield\field_controller;
+defined('MOODLE_INTERNAL') || die();
+require_once(__DIR__ . '/../lib.php');
+
+/**
+ * Tests for ps_moduleshop.
+ *
+ * @package local_ps_moduleshop
+ * @copyright 2025 Wunderbyte GmbH <info@wunderbyte.at>
+ * @author David Ala
+ * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 final class ps_moduleshop_test extends advanced_testcase {
-
-
     protected function setUp(): void {
         parent::setUp();
         $this->resetAfterTest(true);
     }
 
     /**
-     * Test for getcourse.
+     * Test for get_courses.
      *
-     * @covers \ps_moduleshop::getcourse
+     * @covers \ps_moduleshop::get_courses
      *
      *
      */
-    public function test_get_customfields() {
+    public function test_get_courses(): void {
+        $course1 = $this->getDataGenerator()->create_course();
+        $course2 = $this->getDataGenerator()->create_course();
+
+        $shop = new ps_moduleshop();
+        $courses = $shop->get_courses();
+
+        // One Course is created automatically.
+        $this->assertIsArray($courses);
+        $this->assertCount(3, $courses);
+    }
+
+    /**
+     * Test for get_customfields.
+     *
+     * @covers \ps_moduleshop::get_customfields
+     *
+     *
+     */
+
+    public function test_get_customfields(): void {
         global $DB;
 
         $course = $this->getDataGenerator()->create_course();
@@ -39,9 +80,9 @@ final class ps_moduleshop_test extends advanced_testcase {
 
          // 2. Create a custom field in the category.
          $data = (object)[
-             'shortname' => 'mycustomfield',
-             'name' => 'My Custom Field',
-             'type' => 'text', // Other types: 'checkbox', 'textarea', etc.
+             'shortname' => 'psigenerell',
+             'name' => 'psigenerell',
+             'type' => 'text',
              'categoryid' => $categoryid,
          ];
 
@@ -49,31 +90,36 @@ final class ps_moduleshop_test extends advanced_testcase {
          $field->save();
 
          // 3. Set a value for the custom field.
-         $handler = \core_course\customfield\course_handler::create();
-         $datas = $handler->get_instance_data($course->id, true);
-         $customfield = $datas[$field->get('id')];
-         $customfield->set_value_from_data(['value' => 'Custom value']);
-         $customfield->save();
+         $formdata = (object) [
+            'id' => $course->id,
+            'customfield_psigenerell' => 'Ja',
 
-         // 5. Assert the value was saved.
-         $reloadeddata = $handler->get_instance_data($course->id);
-         $this->assertEquals('Custom value', $reloadeddata[$field->get('id')]->get_value());
+         ];
+         $handler->instance_form_save($formdata);
+
+         // 4. Assert the value was saved.
+         $reloadeddata = $handler->get_instance_data($course->id, true);
+         $this->assertEquals('Ja', $reloadeddata[$field->get('id')]->get_value());
 
          $shop = new ps_moduleshop();
          $fields = $shop->get_customfields($course->id);
 
          $this->assertIsObject($fields);
-         $this->assertObjectHasAttribute('psigenerell', $fields);
+         $this->assertObjectHasProperty('psigenerell', $fields);
     }
 
+    /**
+     * Test for get_events.
+     *
+     * @covers \ps_moduleshop::get_events
+     *
+     *
+     */
 
-
-    public function test_get_events() {
+    public function test_get_events(): void {
         $course = $this->getDataGenerator()->create_course();
         $this->setAdminUser();
 
-
-        // Event via Moodle-API erzeugen
         $event = calendar_event::create([
             'name' => 'Test Event',
             'description' => 'This is a test event',
@@ -92,39 +138,117 @@ final class ps_moduleshop_test extends advanced_testcase {
         $this->assertEquals('Test Event', reset($events)->name);
     }
 
-    public function test_get_lehrende() {
+    /**
+     * Test for get_cohorts.
+     *
+     * @covers \ps_moduleshop::get_events
+     *
+     *
+     */
+    public function test_get_cohort(): void {
+        // Create parent category.
+        $parent = $this->getDataGenerator()->create_category();
+
+        $shop = new ps_moduleshop();
+        $fetchedcohort = $shop->get_cohort($parent->id);
+        $this->assertEmpty($fetchedcohort);
+
+
+        // Create child category.
+        $child = $this->getDataGenerator()->create_category([
+            'parent' => $parent->id,
+        ]);
+
+        $shop = new ps_moduleshop();
+        $fetchedcohort = $shop->get_cohort($child->id);
+
+        // Assert that the correct category name (from path[2]) is returned.
+        $this->assertEquals($child->name, $fetchedcohort);
+    }
+
+    /**
+     * Test for get_lehrende.
+     *
+     * @covers \ps_moduleshop::get_lehrende
+     *
+     *
+     */
+    public function test_get_lehrende(): void {
+        global $DB;
+
         $course = $this->getDataGenerator()->create_course();
         $user = $this->getDataGenerator()->create_user();
 
-        // Rolle: editingteacher (standard in Moodle)
-        $this->getDataGenerator()->enrol_user($user->id, $course->id, 3);
+        // Assign role to user in course context.
+        $context = context_course::instance($course->id);
+        // Create role (teacher = 3 by default, but to be safe).
+        role_assign(3, $user->id, $context->id);
+
+        // Create required custom profile fields.
+        $academicfield = $this->create_custom_profile_field('academic');
+        $stationsfield = $this->create_custom_profile_field('stations');
+        $focusfield = $this->create_custom_profile_field('focus');
+
+        // Insert user profile data.
+        $this->set_user_profile_data($user->id, $academicfield->id, 'Prof. Dr.');
+        $this->set_user_profile_data($user->id, $stationsfield->id, 'Cardiology');
+        $this->set_user_profile_data($user->id, $focusfield->id, 'Heart failure');
 
         $shop = new ps_moduleshop();
-        $teachers = $shop->get_teachers($course->id);
+        $result = $shop->get_lehrende($course->id);
 
-        $this->assertIsArray($teachers);
-        $this->assertCount(1, $teachers);
-        $this->assertEquals($user->id, $teachers[0]['userid']);
+        // Check result.
+        $this->assertCount(1, $result);
+        $lehrende = reset($result);
+        $this->assertEquals($user->id, $lehrende['userid']);
+        $this->assertEquals('Prof. Dr.', $lehrende['academic']);
+        $this->assertEquals('Cardiology', $lehrende['stations']);
+        $this->assertEquals('Heart failure', $lehrende['focus']);
     }
 
-    public function test_get_cohort() {
+    /**
+     * Function to create customprofilefields.
+     *
+     * @param string $shortname
+     *
+     * @return stdClass
+     *
+     */
+    protected function create_custom_profile_field(string $shortname) {
         global $DB;
-        // Create a category
-        $category = $this->getDataGenerator()->create_category();
 
+        $field = (object)[
+            'shortname' => $shortname,
+            'name' => ucfirst($shortname),
+            'datatype' => 'text',
+            'categoryid' => 1,
+            'sortorder' => 0,
+            'required' => 0,
+            'locked' => 0,
+            'visible' => 1,
+        ];
+        $field->id = $DB->insert_record('user_info_field', $field);
+        return $field;
+    }
 
-        // Create a cohort in the category
-        $cohort = $this->getDataGenerator()->create_cohort([
-            'name' => 'Test Cohort',
-            'categoryid' => $category->id,
-        ]);
+    /**
+     * Function to set user_profile_data.
+     *
+     * @param int $userid
+     * @param int $fieldid
+     * @param string $data
+     *
+     * @return void
+     *
+     */
+    protected function set_user_profile_data(int $userid, int $fieldid, string $data) {
+        global $DB;
 
-        // Now run the test
-        $shop = new ps_moduleshop();
-        //$shop->course_categories = [$category->id => $category];
-        $fetchedcohort = $shop->get_cohort($category->id);
-
-        // Assert that the cohort is correctly fetched
-        $this->assertNotNull($fetchedcohort);
+        $record = (object)[
+            'userid' => $userid,
+            'fieldid' => $fieldid,
+            'data' => $data,
+        ];
+        $DB->insert_record('user_info_data', $record);
     }
 }
