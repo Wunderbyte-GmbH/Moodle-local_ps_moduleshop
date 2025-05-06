@@ -135,22 +135,59 @@ class ps_moduleshop {
      * @return array
      *
      */
-    public function get_teachers(int $courseid): array {
-        $context = \context_course::instance($courseid);
-        $users = get_enrolled_users($context, 'moodle/role:assign', 0, 'u.*', null, 0, 0, true);
-        $teachers = [];
+    public function get_teachers(int $courseid) {
+        global $DB;
+        $context = context_course::instance($courseid);
+        $allcontexts = str_replace('/', ',', substr($context->path, 1));
 
-        foreach ($users as $user) {
-            if (user_has_role_assignment($user->id, 3, $context->id)) {
-                $teachers[] = [
-                    'userid' => (int) $user->id,
-                    'firstname' => $user->firstname,
-                    'lastname' => $user->lastname,
-                    'academic' => self::get_user_profile_field($user->id, 'academic'),
-                    'stations' => self::get_user_profile_field($user->id, 'stations'),
-                    'focus' => self::get_user_profile_field($user->id, 'focus'),
-                ];
-            }
+        $dbfamily = $DB->get_dbfamily();
+
+        switch ($dbfamily) {
+            case 'postgress':
+                $sql = "SELECT ra.id, r.id AS roleid, r.name AS rolename, r.shortname AS roleshortname, u.id AS userid,
+                u.firstname, u.lastname, u.email,
+                MAX(CASE WHEN muif.shortname = 'academic' THEN muid.data END) AS academic,
+                MAX(CASE WHEN muif.shortname = 'stations' THEN muid.data END) AS stations,
+                MAX(CASE WHEN muif.shortname = 'focus' THEN muid.data END) AS focus
+                FROM {role_assignments} ra
+                    INNER JOIN {role} r ON ra.roleid = r.id
+                    INNER JOIN {user} u ON ra.userid = u.id
+                    INNER JOIN {user_info_data} muid ON muid.userid = u.id
+                    INNER JOIN {user_info_field} muif ON muid.fieldid = muif.id
+                WHERE ra.contextid IN ($allcontexts)
+                        AND component = ''
+                        AND r.id = 3
+                GROUP BY ra.id, r.id, r.name, r.shortname, u.id, u.firstname, u.lastname, u.email";
+                break;
+            case 'mysql':
+                $sql = "SELECT ra.id, r.id roleid, r.name rolename, r.shortname roleshortname,
+                u.id userid, u.firstname, u.lastname, u.email,
+                MAX(CASE WHEN muif.shortname = 'academic' THEN muid.data END) as academic,
+                MAX(CASE WHEN muif.shortname = 'stations' THEN muid.data END) as stations,
+                MAX(CASE WHEN muif.shortname = 'focus' THEN muid.data END) as focus
+                FROM {role_assignments} ra
+                    INNER JOIN {role} r ON ra.roleid = r.id
+                    INNER JOIN {user} u ON ra.userid = u.id
+                    INNER JOIN {user_info_data} muid ON muid.userid = u.id
+                    INNER JOIN {user_info_field} muif ON muid.fieldid = muif.id
+                WHERE ra.contextid IN ($allcontexts)
+                    AND (component = '')
+                    AND (r.id = 3)
+                GROUP BY muid.userid;";
+                break;
+        }
+
+        $records = $DB->get_records_sql($sql);
+        $teachers = [];
+        foreach ($records as $record) {
+            $teachers[] = [
+                        "userid" => intval($record->userid),
+                        "firstname" => strip_tags($record->firstname),
+                        "lastname" => strip_tags($record->lastname),
+                        "academic" => $record->academic,
+                        "stations" => $record->stations,
+                        "focus" => $record->focus,
+            ];
         }
         return $teachers;
     }
