@@ -88,25 +88,20 @@ ORDER BY timestart;', array($courseid));
         global $DB;
         $context = context_course::instance($courseid);
         $allcontexts = str_replace('/', ',', substr($context->path, 1));
-        $sql = "SELECT ra.id, r.id roleid, r.name rolename, r.shortname roleshortname, u.id userid, u.firstname, u.lastname, u.email,
-                    MAX(
-                        CASE WHEN muif.shortname = 'academic' THEN muid.data END
-                    ) as academic,
-                    MAX(
-                        CASE WHEN muif.shortname = 'stations' THEN muid.data END
-                    ) as stations,
-                    MAX(
-                        CASE WHEN muif.shortname = 'focus' THEN muid.data END
-                    ) as focus
-                FROM {role_assignments} ra
-                INNER JOIN {role} r ON ra.roleid = r.id
-                INNER JOIN {user} u ON ra.userid = u.id
-                INNER JOIN {user_info_data} muid ON muid.userid = u.id
-                INNER JOIN {user_info_field} muif ON muid.fieldid = muif.id
-                WHERE ra.contextid IN ($allcontexts)
-                    AND (component = '')
-                    AND (r.id = 3)
-                GROUP BY muid.userid;";
+        $sql = "SELECT ra.id, r.id AS roleid, r.name AS rolename, r.shortname AS roleshortname, u.id AS userid,
+               u.firstname, u.lastname, u.email,
+               MAX(CASE WHEN muif.shortname = 'academic' THEN muid.data END) AS academic,
+               MAX(CASE WHEN muif.shortname = 'stations' THEN muid.data END) AS stations,
+               MAX(CASE WHEN muif.shortname = 'focus' THEN muid.data END) AS focus
+        FROM {role_assignments} ra
+        INNER JOIN {role} r ON ra.roleid = r.id
+        INNER JOIN {user} u ON ra.userid = u.id
+        INNER JOIN {user_info_data} muid ON muid.userid = u.id
+        INNER JOIN {user_info_field} muif ON muid.fieldid = muif.id
+        WHERE ra.contextid IN ($allcontexts)
+              AND component = ''
+              AND r.id = 3
+        GROUP BY ra.id, r.id, r.name, r.shortname, u.id, u.firstname, u.lastname, u.email";
 
         $records =  $DB->get_records_sql($sql);
         $ret = array();
