@@ -15,6 +15,8 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace local_ps_moduleshop;
+
+use context_course;
 defined('MOODLE_INTERNAL') || die();
 
 
@@ -118,7 +120,7 @@ class ps_moduleshop {
      * @return array
      *
      */
-    public function get_events(int $courseid): array {
+    public function get_events(int $courseid) {
         global $DB;
         return $DB->get_records('event', [
             'courseid' => $courseid,
@@ -201,7 +203,7 @@ class ps_moduleshop {
      * @return string|null
      *
      */
-    public static function get_user_profile_field(int $userid, string $shortname): ?string {
+    public static function get_user_profile_field(int $userid, string $shortname) {
         global $DB;
         static $fieldsbyname = [];
 
@@ -212,7 +214,6 @@ class ps_moduleshop {
         if (!$fieldsbyname[$shortname]) {
             return null;
         }
-        // TODO: Nicht immer in die DB schauen.
         return $DB->get_field('user_info_data', 'data', [
             'userid' => $userid,
             'fieldid' => $fieldsbyname[$shortname],
@@ -227,7 +228,7 @@ class ps_moduleshop {
      * @return string|null
      *
      */
-    public function get_cohort(int $categoryid): ?string {
+    public function get_cohort(int $categoryid) {
         global $DB;
 
         if (!isset($this->coursecategories[$categoryid])) {
@@ -239,7 +240,7 @@ class ps_moduleshop {
 
         if (count($path) > 2) {
             $targetid = (int) $path[2];
-            return $DB->get_field('course_categories', 'name', ['id' => $targetid]) ?: null;
+            return $DB->get_field('course_categories', 'name', ['id' => $targetid]);
         }
         return null;
     }
