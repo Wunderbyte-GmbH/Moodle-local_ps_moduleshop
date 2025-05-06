@@ -121,9 +121,9 @@ final class ps_moduleshop_test extends advanced_testcase {
     }
 
     /**
-     * Test for get_cohorts.
+     * Test for get_cohort.
      *
-     * @covers \ps_moduleshop::get_events
+     * @covers \ps_moduleshop::get_cohort
      *
      *
      */
@@ -149,13 +149,13 @@ final class ps_moduleshop_test extends advanced_testcase {
     }
 
     /**
-     * Test for get_lehrende.
+     * Test for get_teachers.
      *
-     * @covers \ps_moduleshop::get_lehrende
+     * @covers \ps_moduleshop::get_teachers
      *
      *
      */
-    public function test_get_lehrende(): void {
+    public function test_get_teachers(): void {
         global $DB;
 
         $course = $this->getDataGenerator()->create_course();

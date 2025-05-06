@@ -14,25 +14,27 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * Export Creation class.
+ *
+ * @package     local_ps_moduleshop
+ * @author      David Ala
+ * @copyright  2025 Wunderbyte GmbH
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 namespace local_ps_moduleshop;
-
 use context_course;
 defined('MOODLE_INTERNAL') || die();
-
-
 use core_course_category;
 use core_customfield\handler;
 use stdClass;
-
 require_once($CFG->dirroot . '/course/lib.php');
 require_once($CFG->dirroot . '/cohort/lib.php');
 require_once($CFG->dirroot . '/user/lib.php');
 
 /**
- * [Description ps_moduleshop]
- * @package ps_moduleshop
+ * Module Logic Class.
  */
-
 class ps_moduleshop {
     /** @var array */
     private array $coursecategories;
@@ -145,7 +147,7 @@ class ps_moduleshop {
         $dbfamily = $DB->get_dbfamily();
 
         switch ($dbfamily) {
-            case 'postgress':
+            case 'postgres':
                 $sql = "SELECT ra.id, r.id AS roleid, r.name AS rolename, r.shortname AS roleshortname, u.id AS userid,
                 u.firstname, u.lastname, u.email,
                 MAX(CASE WHEN muif.shortname = 'academic' THEN muid.data END) AS academic,
